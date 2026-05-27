@@ -1,0 +1,6 @@
+.env
+model/model.pkl
+model/label_encoder.pkl
+dataset/history.json
+__pycache__/
+*.pyc

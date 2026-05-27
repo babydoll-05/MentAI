@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survei — MentAI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .survey-header {
+      padding: 48px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+
+    .survey-header p { color: var(--text-muted); margin-top: 8px; font-size: 15px; }
+
+    .scale-info {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .scale-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .scale-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--mint-light);
+      color: var(--mint-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .question-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .question-card.answered { border-color: var(--mint); }
+
+    .question-num {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--mint-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .question-text {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .options {
+      display: flex;
+      gap: 10px;
+    }
+
+    .option-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--white);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .option-btn .num { font-size: 16px; font-weight: 600; display: block; }
+    .option-btn .lbl { font-size: 10px; color: var(--text-muted); display: block; margin-top: 2px; }
+
+    .option-btn:hover { border-color: var(--mint); }
+    .option-btn.selected { border-color: var(--mint-dark); background: var(--mint-light); }
+    .option-btn.selected .num { color: var(--mint-dark); }
+
+    .submit-area {
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .progress-text { font-size: 13px; color: var(--text-muted); }
+    .progress-bar { width: 200px; height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; }
+    .progress-fill { height: 100%; background: var(--mint-dark); border-radius: 2px; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="/">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="MentAI" onerror="this.style.display='none'">
+      MentAI
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/survey" class="active">Survei</a>
+      <a href="/history">Riwayat</a>
+    </div>
+    <button class="btn btn-dark" style="margin-right:90px" onclick="logout()">Logout</button>
+  </nav>
+
+  <div class="container page">
+    <div class="survey-header">
+      <div class="section-title">MBI-SS Survey</div>
+      <h1>Survei <span class="italic">Burnout</span></h1>
+      <p>Jawab 5 pertanyaan berikut dengan jujur sesuai kondisi kamu.</p>
+    </div>
+
+    <div class="scale-info">
+      {% set labels = ['Tidak Pernah', 'Jarang', 'Kadang', 'Sering', 'Sangat Sering'] %}
+      {% for i in range(1, 6) %}
+      <div class="scale-item">
+        <div class="scale-num">{{ i }}</div>
+        <span>{{ labels[i-1] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <form id="surveyForm">
+      {% for i, q in enumerate(questions) %}
+      <div class="question-card" id="card-{{ i }}">
+        <div class="question-num">Pertanyaan {{ i + 1 }}</div>
+        <div class="question-text">{{ q }}</div>
+        <div class="options">
+          {% for v in range(1, 6) %}
+          {% set lbls = ['Tidak Pernah', 'Jarang', 'Kadang', 'Sering', 'Sangat Sering'] %}
+          <button type="button" class="option-btn" data-q="{{ i }}" data-v="{{ v }}" onclick="selectOption(this)">
+            <span class="num">{{ v }}</span>
+            <span class="lbl">{{ lbls[v-1] }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="submit-area">
+        <div>
+          <div class="progress-text"><span id="answeredCount">0</span> / 5 terjawab</div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="submitSurvey()">
+          Lihat Hasil ↗
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

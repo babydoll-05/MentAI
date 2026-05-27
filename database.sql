@@ -1,0 +1,26 @@
+CREATE DATABASE IF NOT EXISTS mentai;
+USE mentai;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    universitas VARCHAR(100),
+    prodi VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE riwayat (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    mbi1 INT NOT NULL,
+    mbi2 INT NOT NULL,
+    mbi3 INT NOT NULL,
+    mbi4 INT NOT NULL,
+    mbi5 INT NOT NULL,
+    total INT NOT NULL,
+    burnout VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

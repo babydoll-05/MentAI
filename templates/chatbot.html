@@ -1,0 +1,13 @@
+<div id="chatbot">
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">💬 MentAI Assistant</div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg msg-bot">Halo! Saya MentAI. Ada yang ingin kamu tanyakan tentang burnout? 😊</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter') sendChat()">
+      <button onclick="sendChat()">Kirim</button>
+    </div>
+  </div>
+  <button class="chat-toggle" onclick="toggleChat()">💬</button>
+</div>

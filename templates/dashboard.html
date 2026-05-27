@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — MentAI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+  <style>
+    body { overflow: hidden; }
+
+    #shapegrid-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    nav { position: relative; z-index: 10; }
+    .dashboard-hero, #chatbot { position: relative; z-index: 1; }
+
+    .burnout-banner {
+      position: fixed;
+      top: 75px;
+      left: 0; right: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 24px;
+      font-size: 13px;
+      font-weight: 600;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .burnout-banner.rendah { background: rgba(46,125,50,0.15);  color: #2E7D32; border-bottom: 1px solid rgba(46,125,50,0.15); }
+    .burnout-banner.sedang { background: rgba(245,127,23,0.15); color: #E65100; border-bottom: 1px solid rgba(245,127,23,0.15); }
+    .burnout-banner.tinggi { background: rgba(198,40,40,0.15);  color: #C62828; border-bottom: 1px solid rgba(198,40,40,0.15); }
+    .burnout-banner.none   { background: rgba(126,206,196,0.2); color: var(--mint-dark); border-bottom: 1px solid rgba(126,206,196,0.2); }
+
+    .dashboard-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-height: calc(100vh - 65px);
+      margin-top: -80px;
+      padding-right: 120px;
+    }
+
+    #mascot {
+      width: 700px;
+      height: 700px;
+      flex-shrink: 0;
+      margin-top: 60px;
+    }
+
+    .hero-text .greeting {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .hero-text h1 {
+      font-size: 80px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.1;
+    }
+
+    .hero-text .subtitle {
+      font-size: 60px;
+      font-weight: 600;
+      margin-bottom: 32px;
+    }
+
+    .hero-text .subtitle .cursive {
+      font-family: 'Dancing Script', cursive;
+      font-size: 68px;
+      color: var(--text);
+    }
+
+    .btn-chat {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      border: 2px solid var(--mint);
+      border-radius: 100px;
+      background: var(--white);
+      color: var(--text);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      transition: color 0.3s;
+    }
+
+    .btn-chat::before {
+      content: '';
+      position: absolute;
+      width: 0;
+      aspect-ratio: 1;
+      background: var(--mint);
+      border-radius: 50%;
+      left: -100%;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: width 0.7s, left 0.7s, transform 0.7s;
+      z-index: -1;
+    }
+
+    .btn-chat:hover::before {
+      width: 300%;
+      left: 0;
+      transform: translateY(-50%) scale(1.5);
+    }
+
+    .btn-chat:hover { color: var(--white); }
+
+    /* ── CHAT PANEL ── */
+    .right-area { display: flex; align-items: center; }
+
+    @keyframes heroOut {
+      to { opacity: 0; transform: translateX(-16px); }
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateX(24px) scale(0.96); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    .chat-panel {
+      width: 380px;
+      height: 520px;
+      display: none;
+      flex-direction: column;
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.85);
+      box-shadow: 0 8px 40px rgba(126,206,196,0.25);
+      animation: panelIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+
+    .cp-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.5);
+      border-bottom: 1px solid rgba(126,206,196,0.2);
+      flex-shrink: 0;
+    }
+
+    .cp-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(45,122,122,0.15);
+      color: var(--mint-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12px;
+      border: 1.5px solid rgba(45,122,122,0.25);
+      flex-shrink: 0;
+    }
+
+    .cp-info .cp-name   { font-size: 13px; font-weight: 700; color: var(--text); }
+    .cp-info .cp-status { font-size: 11px; color: #4caf50; display: flex; align-items: center; gap: 4px; }
+    .cp-status-dot      { width: 6px; height: 6px; background: #4caf50; border-radius: 50%; }
+
+    .cp-close {
+      margin-left: auto;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.06);
+      color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .cp-close:hover { background: rgba(0,0,0,0.12); color: var(--text); }
+    .cp-close svg { width: 12px; height: 12px; }
+
+    .cp-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 12px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.1) transparent;
+    }
+
+    .cp-date-sep {
+      display: flex; align-items: center; justify-content: center; margin: 4px 0;
+    }
+    .cp-date-sep span {
+      font-size: 10px; color: var(--text-muted);
+      background: rgba(255,255,255,0.5); padding: 2px 10px; border-radius: 100px;
+    }
+
+    .cp-row { display: flex; align-items: flex-end; gap: 7px; }
+    .cp-row.user { justify-content: flex-end; }
+    .cp-row.bot  { justify-content: flex-start; }
+    .cp-row { animation: bubbleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; opacity: 0; }
+    .cp-row.user { transform-origin: bottom right; }
+    .cp-row.bot  { transform-origin: bottom left; }
+
+    @keyframes bubbleIn {
+      from { opacity: 0; transform: scale(0.88) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .cp-msg-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(45,122,122,0.15); color: var(--mint-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; flex-shrink: 0;
+      border: 1px solid rgba(45,122,122,0.25);
+    }
+
+    .cp-col { display: flex; flex-direction: row; align-items: flex-end; gap: 6px; max-width: 78%; }
+
+    .cp-bubble {
+      padding: 9px 13px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .cp-bubble.bot  { background: rgba(255,255,255,0.8); color: var(--text); border-bottom-left-radius: 4px; }
+    .cp-bubble.user { background: var(--mint-dark); color: white; border-bottom-right-radius: 4px; }
+
+    .cp-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; padding-bottom: 2px; }
+
+    .cp-typing {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.8); padding: 9px 13px;
+      border-radius: 16px; border-bottom-left-radius: 4px;
+    }
+    .cp-typing span {
+      width: 5px; height: 5px; background: var(--mint-dark); border-radius: 50%;
+      animation: dotBounce 0.6s ease-in-out infinite;
+    }
+    .cp-typing span:nth-child(2) { animation-delay: 0.15s; }
+    .cp-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes dotBounce {
+      0%,100% { transform: translateY(0); }
+      40%      { transform: translateY(-4px); }
+    }
+
+    .cp-input-area {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 10px;
+      background: rgba(255,255,255,0.5);
+      border-top: 1px solid rgba(126,206,196,0.2);
+      flex-shrink: 0;
+    }
+
+    .cp-input-area input {
+      flex: 1; border: 1px solid rgba(0,0,0,0.08); font-size: 13px;
+      font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.6);
+      outline: none; color: var(--text); border-radius: 100px; padding: 8px 14px;
+    }
+    .cp-input-area input::placeholder { color: #aaa; }
+
+    .cp-send {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(45,122,122,0.85); color: white;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .cp-send:hover  { background: rgba(45,122,122,1); }
+    .cp-send:active { transform: scale(0.9); }
+    .cp-send svg { width: 14px; height: 14px; }
+
+    .btn-chat svg {
+      width: 32px;
+      height: 32px;
+      padding: 8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--mint-dark);
+      transform: rotate(45deg);
+      transition: transform 0.3s, background 0.3s, border 0.3s;
+    }
+
+    .btn-chat:hover svg {
+      transform: rotate(90deg);
+      background: var(--white);
+      border-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="/">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="MentAI" onerror="this.style.display='none'">
+      MentAI
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/survey">Survei</a>
+      <a href="/history">Riwayat</a>
+    </div>
+    <button class="btn btn-dark" style="margin-right:90px" onclick="logout()">Logout</button>
+  </nav>
+
+  <canvas id="shapegrid-canvas"></canvas>
+
+  {% if last %}
+  <div class="burnout-banner {{ last.burnout | lower }}">
+    Level Burnout : {{ last.burnout }}
+  </div>
+  {% else %}
+  <div class="burnout-banner none">
+    Kamu belum pernah cek burnout — <a href="/survey" style="color:inherit;margin-left:4px;">mulai sekarang →</a>
+  </div>
+  {% endif %}
+
+  <div class="dashboard-hero">
+    <div id="mascot"></div>
+    <div class="right-area">
+      <div class="hero-text" id="heroText">
+        <p class="greeting">Hey, {{ user }}.</p>
+        <h1>You're not alone.</h1>
+        <p class="subtitle">Chat with <span class="cursive">MinMent</span> ↗</p>
+        <button class="btn-chat" onclick="openChat()">
+          Start Chatting
+          <svg viewBox="0 0 16 19" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 18C7 18.5523 7.44772 19 8 19C8.55228 19 9 18.5523 9 18H7ZM8.70711 0.292893C8.31658 -0.0976311 7.68342 -0.0976311 7.29289 0.292893L0.928932 6.65685C0.538408 7.04738 0.538408 7.68054 0.928932 8.07107C1.31946 8.46159 1.95262 8.46159 2.34315 8.07107L8 2.41421L13.6569 8.07107C14.0474 8.46159 14.6805 8.46159 15.0711 8.07107C15.4616 7.68054 15.4616 7.04738 15.0711 6.65685L8.70711 0.292893ZM9 18L9 1H7L7 18H9Z" fill="#2D7A7A"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- INLINE CHAT PANEL -->
+      <div class="chat-panel" id="chatPanel">
+        <div class="cp-header">
+          <div class="cp-avatar">M</div>
+          <div class="cp-info">
+            <div class="cp-name">MinMent</div>
+            <div class="cp-status"><span class="cp-status-dot"></span> Online</div>
+          </div>
+          <button class="cp-close" onclick="closeChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="cp-messages" id="cpMessages">
+          <div class="cp-date-sep"><span>Today</span></div>
+          <div class="cp-row bot">
+            <div class="cp-msg-avatar">M</div>
+            <div class="cp-col">
+              <div class="cp-bubble bot">Halo! 👋 Ceritakan apa yang kamu rasakan, aku siap dengerin.</div>
+              <div class="cp-time" id="cpInitTime"></div>
+            </div>
+          </div>
+        </div>
+        <div class="cp-input-area">
+          <input type="text" id="cpInput" placeholder="Ketik pesanmu..." onkeydown="if(event.key==='Enter') cpSend()">
+          <button class="cp-send" onclick="cpSend()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include 'chatbot.html' %}
+
+  <script src="{{ url_for('static', filename='js/shapegrid.js') }}"></script>
+  <script>
+    initShapeGrid(document.getElementById('shapegrid-canvas'), {
+      direction: 'diagonal',
+      speed: 0.3,
+      borderColor: '#c5e8e5',
+      squareSize: 40,
+      hoverFillColor: '#7ECEC4',
+      hoverTrailAmount: 5
+    });
+
+    lottie.loadAnimation({
+      container: document.getElementById('mascot'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: "{{ url_for('static', filename='img/mascot.json') }}"
+    });
+  </script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    const cpBurnout = "{{ last.burnout if last else '' }}";
+
+    document.getElementById('cpInitTime').textContent = cpGetTime();
+
+    function cpGetTime() {
+      const n = new Date();
+      return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+    }
+
+    function openChat() {
+      const hero = document.getElementById('heroText');
+      hero.style.animation = 'heroOut 0.25s ease forwards';
+      setTimeout(() => {
+        hero.style.display = 'none';
+        const panel = document.getElementById('chatPanel');
+        panel.style.display = 'flex';
+      }, 240);
+    }
+
+    function closeChat() {
+      const panel = document.getElementById('chatPanel');
+      panel.style.animation = 'heroOut 0.2s ease forwards';
+      setTimeout(() => {
+        panel.style.display = 'none';
+        panel.style.animation = 'panelIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards';
+        const hero = document.getElementById('heroText');
+        hero.style.animation = 'panelIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards';
+        hero.style.display = 'block';
+      }, 200);
+    }
+
+    async function cpSend() {
+      const input = document.getElementById('cpInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      cpAppend(msg, 'user');
+      input.value = '';
+      input.disabled = true;
+      const typingRow = cpShowTyping();
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, burnout: cpBurnout })
+      });
+      const data = await res.json();
+      typingRow.remove();
+      cpAppend(data.reply, 'bot');
+      input.disabled = false;
+      input.focus();
+    }
+
+    function cpShowTyping() {
+      const area = document.getElementById('cpMessages');
+      const row = document.createElement('div');
+      row.className = 'cp-row bot';
+      const av = document.createElement('div');
+      av.className = 'cp-msg-avatar';
+      av.textContent = 'M';
+      const dots = document.createElement('div');
+      dots.className = 'cp-typing';
+      dots.innerHTML = '<span></span><span></span><span></span>';
+      row.appendChild(av);
+      row.appendChild(dots);
+      area.appendChild(row);
+      area.scrollTop = area.scrollHeight;
+      return row;
+    }
+
+    function cpAppend(text, type) {
+      const area = document.getElementById('cpMessages');
+      const row = document.createElement('div');
+      row.className = `cp-row ${type}`;
+      if (type === 'bot') {
+        const av = document.createElement('div');
+        av.className = 'cp-msg-avatar';
+        av.textContent = 'M';
+        row.appendChild(av);
+      }
+      const col = document.createElement('div');
+      col.className = 'cp-col';
+      const bubble = document.createElement('div');
+      bubble.className = `cp-bubble ${type}`;
+      bubble.textContent = text;
+      const time = document.createElement('div');
+      time.className = 'cp-time';
+      time.textContent = cpGetTime();
+      if (type === 'user') { col.appendChild(time); col.appendChild(bubble); }
+      else                  { col.appendChild(bubble); col.appendChild(time); }
+      row.appendChild(col);
+      area.appendChild(row);
+      area.scrollTop = area.scrollHeight;
+    }
+  </script>
+</body>
+</html>
