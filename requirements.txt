@@ -2,6 +2,7 @@ flask
 scikit-learn
 pandas
 numpy
-google-generativeai
 python-dotenv
 mysql-connector-python
+werkzeug
+groq
