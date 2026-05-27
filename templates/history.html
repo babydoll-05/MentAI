@@ -73,9 +73,22 @@
 
     .empty-state h3 { margin-bottom: 8px; color: var(--text); }
     .empty-state p { font-size: 14px; margin-bottom: 24px; }
+
+    #shapegrid-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    nav { position: relative; z-index: 10; }
+    .container { position: relative; z-index: 1; }
   </style>
 </head>
 <body>
+  <canvas id="shapegrid-canvas"></canvas>
   <nav>
     <a class="nav-logo" href="/">
       <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="MentAI" onerror="this.style.display='none'">
@@ -110,10 +123,10 @@
         <tbody>
           {% for h in history | reverse %}
           <tr>
-            <td>{{ h.timestamp }}</td>
+            <td>{{ h.created_at.strftime('%d %b %Y, %H:%M') if h.created_at else '-' }}</td>
             <td>
               <div class="answers-mini">
-                {% for a in h.answers %}
+                {% for a in [h.mbi1, h.mbi2, h.mbi3, h.mbi4, h.mbi5] %}
                 <div class="ans-dot">{{ a }}</div>
                 {% endfor %}
               </div>
@@ -135,6 +148,17 @@
   </div>
 
   {% include 'chatbot.html' %}
+  <script src="{{ url_for('static', filename='js/shapegrid.js') }}"></script>
+  <script>
+    initShapeGrid(document.getElementById('shapegrid-canvas'), {
+      direction: 'diagonal',
+      speed: 0.3,
+      borderColor: '#ddf0ee',
+      squareSize: 40,
+      hoverFillColor: '#7ECEC4',
+      hoverTrailAmount: 5
+    });
+  </script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

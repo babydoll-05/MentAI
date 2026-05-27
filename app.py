@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import pickle
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from dotenv import load_dotenv
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -21,6 +21,17 @@ with open(MODEL_PATH, 'rb') as f:
     model = pickle.load(f)
 with open(LE_PATH, 'rb') as f:
     le = pickle.load(f)
+
+import json
+METRICS_PATH = os.path.join(BASE_DIR, 'model', 'metrics.json')
+if not os.path.exists(METRICS_PATH):
+    import subprocess, sys
+    subprocess.run([sys.executable, os.path.join(BASE_DIR, 'model', 'train_model.py')], check=False)
+if os.path.exists(METRICS_PATH):
+    with open(METRICS_PATH, 'r') as f:
+        model_metrics = json.load(f)
+else:
+    model_metrics = {'accuracy': '-', 'precision': '-', 'recall': '-', 'auc': '-'}
 
 groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 
@@ -79,7 +90,7 @@ def survey():
 def result():
     if 'user_id' not in session or 'last_result' not in session:
         return redirect(url_for('index'))
-    return render_template('result.html', result=session['last_result'])
+    return render_template('result.html', result=session['last_result'], metrics=model_metrics)
 
 @app.route('/chatbot')
 def chatbot_page():
@@ -189,11 +200,25 @@ def chat():
     burnout_level = data.get('burnout', '')
     user_message = data.get('message', '')
 
+    system_prompt = (
+        f"You are MinMent, a warm and empathetic mental health companion for university students. "
+        f"The user's current burnout level is: {burnout_level}. "
+        f"Your default language is Indonesian (bahasa Indonesia). "
+        f"CRITICAL RULE: detect the language of the user's message and always reply in that exact same language. "
+        f"If the user writes in Indonesian → reply in casual Indonesian. "
+        f"If the user writes in English → reply in English. "
+        f"If the user writes in Javanese (basa Jawa) → reply in casual Javanese ngoko. "
+        f"Never mix languages or switch unless the user switches first. "
+        f"Be casual and friendly like a close friend — show empathy, be honest and warm. "
+        f"Use relevant emojis occasionally (not every sentence). Never be stiff or formal. "
+        f"Keep replies to 2-3 sentences, direct but warm."
+    )
+
     try:
         response = groq_client.chat.completions.create(
-            model='llama-3.1-8b-instant',
+            model='llama-3.3-70b-versatile',
             messages=[
-                {'role': 'system', 'content': f'Kamu adalah MentAI, teman curhat mahasiswa yang hangat, santai, dan manusiawi. Tingkat burnout user sekarang: {burnout_level}. Gaya ngobrolmu kayak teman deket — pakai bahasa Indonesia yang santai (boleh sesekali "aku/kamu"), empati, dan jujur. Sesekali pakai emoji yang relevan (jangan tiap kalimat). Jangan kaku, jangan formal, jangan mulai dengan salam kayak "Assalamualaikum". Balas singkat 2-3 kalimat aja, langsung to the point tapi tetap hangat.'},
+                {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_message}
             ],
             max_tokens=200,

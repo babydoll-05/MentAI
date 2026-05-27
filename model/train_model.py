@@ -37,4 +37,15 @@ with open(os.path.join(model_dir, 'model.pkl'), 'wb') as f:
 with open(os.path.join(model_dir, 'label_encoder.pkl'), 'wb') as f:
     pickle.dump(le, f)
 
+import json
+metrics = {
+    'accuracy': round(accuracy * 100, 1),
+    'precision': round(precision * 100, 1),
+    'recall': round(recall * 100, 1),
+    'auc': round(auc, 3)
+}
+with open(os.path.join(model_dir, 'metrics.json'), 'w') as f:
+    json.dump(metrics, f)
+
 print("Model saved: model/model.pkl")
+print("Metrics saved: model/metrics.json")

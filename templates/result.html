@@ -121,6 +121,29 @@
       display: flex;
       gap: 12px;
     }
+
+    .model-metrics {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 20px;
+      padding: 10px 16px;
+      background: var(--mint-light);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .model-metrics .mm-label {
+      font-weight: 600;
+      color: var(--mint-dark);
+      margin-right: 4px;
+    }
+
+    .mm-item { display: flex; align-items: center; gap: 4px; }
+    .mm-item strong { color: var(--text); font-weight: 600; }
+    .mm-sep { color: var(--border); margin: 0 4px; }
   </style>
 </head>
 <body>
@@ -196,6 +219,17 @@
         <li>Minta dukungan dari orang-orang terdekat</li>
       </ul>
       {% endif %}
+    </div>
+
+    <div class="model-metrics">
+      <span class="mm-label">Model AI:</span>
+      <span class="mm-item">Accuracy <strong>{{ metrics.accuracy }}%</strong></span>
+      <span class="mm-sep">·</span>
+      <span class="mm-item">Precision <strong>{{ metrics.precision }}%</strong></span>
+      <span class="mm-sep">·</span>
+      <span class="mm-item">Recall <strong>{{ metrics.recall }}%</strong></span>
+      <span class="mm-sep">·</span>
+      <span class="mm-item">AUC <strong>{{ metrics.auc }}</strong></span>
     </div>
 
     <div class="action-row">
