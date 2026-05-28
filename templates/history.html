@@ -46,6 +46,7 @@
 
     .history-table tr:last-child td { border-bottom: none; }
     .history-table tr:hover td { background: var(--mint-light); }
+    .history-table tbody tr { cursor: pointer; }
 
     .answers-mini {
       display: flex;
@@ -122,7 +123,7 @@
         </thead>
         <tbody>
           {% for h in history | reverse %}
-          <tr>
+          <tr onclick="window.location.href='/result/{{ h.id }}'"  title="Klik untuk lihat detail">
             <td>{{ h.created_at.strftime('%d %b %Y, %H:%M') if h.created_at else '-' }}</td>
             <td>
               <div class="answers-mini">

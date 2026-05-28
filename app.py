@@ -92,6 +92,26 @@ def result():
         return redirect(url_for('index'))
     return render_template('result.html', result=session['last_result'], metrics=model_metrics)
 
+@app.route('/result/<int:id>')
+def result_by_id(id):
+    if 'user_id' not in session:
+        return redirect(url_for('index'))
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM riwayat WHERE id = %s AND user_id = %s', (id, session['user_id']))
+    row = cursor.fetchone()
+    cursor.close()
+    db.close()
+    if not row:
+        return redirect(url_for('history'))
+    result = {
+        'answers': [row['mbi1'], row['mbi2'], row['mbi3'], row['mbi4'], row['mbi5']],
+        'total': row['total'],
+        'burnout': row['burnout'],
+        'timestamp': row['created_at'].strftime('%Y-%m-%d %H:%M:%S') if row['created_at'] else '-'
+    }
+    return render_template('result.html', result=result, metrics=model_metrics)
+
 @app.route('/chatbot')
 def chatbot_page():
     return redirect(url_for('dashboard'))
