@@ -7,7 +7,7 @@ import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 from groq import Groq
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 app = Flask(__name__)
 app.secret_key = 'mentai_secret_key'
