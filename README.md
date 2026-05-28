@@ -57,7 +57,7 @@ MBI2 > 2.5
 
 ### 1. Clone repository
 ```bash
-git clone https://github.com/babydoll-05/MentAI.gitg
+git clone https://github.com/babydoll-05/MentAI.git
 cd MentAI
 ```
 
